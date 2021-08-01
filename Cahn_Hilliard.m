@@ -41,8 +41,6 @@ M = M + diag(dx2, 2*n) + diag(dx2, -2*n);
 M = M + diag(dx1y1, n+1) + diag(dx1y1, -n-1);
 M = M + diag(dy1x1, n-1) + diag(dy1x1, -n+1);
 
-I = inv(M);
-
 %{
 for i=1:N
     for j=1:N
@@ -73,7 +71,7 @@ subplot(2,1,2);
 for i=1:2400
     Wim = workim.^3 - workim; 
     rhs = Lapl*Wim + workim - C1*epsilon*Lapl*workim + C2*workim + lambda.*(im(:) - workim);
-    workim = I*rhs;
+    workim = M\rhs;
     workim = reshape(workim, [n,m]);
     imshow((workim+1)/2);
     title(["t = ", i*dt]);
