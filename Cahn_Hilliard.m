@@ -10,7 +10,7 @@ N = n*m;
 
 %%
 epsilon = 0.8;
-l0 = 500;
+l0 = 0;
 C1 = 300;
 C2 = 3*l0;
 dt = 1;
@@ -57,9 +57,9 @@ for i=1:N
 end
 %}
 
-d0 = -4*dt/epsilon*ones([N,1]);
-d1 = 1*dt/epsilon*ones([N-1,1]);
-d2 = 1*dt/epsilon*ones([N-n,1]);
+d0 = -4*dt*ones([N,1]);
+d1 = 1*dt*ones([N-1,1]);
+d2 = 1*dt*ones([N-n,1]);
 Lapl = diag(d0) + diag(d1, 1) + diag(d1, -1) + diag(d2, n) + diag(d2, -n);
 
 %%
@@ -70,11 +70,11 @@ imshow((im+1)/2);
 subplot(2,1,2);
 for i=1:2400
     Wim = workim.^3 - workim; 
-    rhs = Lapl*Wim + workim - C1*epsilon*Lapl*workim + C2*workim + lambda.*(im(:) - workim);
+    rhs = Lapl*(Wim/epsilon - C1*workim) + (1+C2*dt)*workim + dt*lambda.*(im(:) - workim);
     workim = M\rhs;
     workim = reshape(workim, [n,m]);
     imshow((workim+1)/2);
-    title(["t = ", i*dt]);
+    title(["t = " num2str(i*dt)]);
     drawnow;
     workim = workim(:);
 end
