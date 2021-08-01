@@ -9,17 +9,17 @@ im = 2*im-1;
 N = n*m;
 
 %%
-epsilon = 0.1;
-C1 = 10;
-C2 = 1;
-dt = 0.001;
-l0 = 1;
+epsilon = 0.8;
+l0 = 500;
+C1 = 300;
+C2 = 3*l0;
+dt = 1;
 
 workim = im(:);
 
 lambda = l0*ones([N,1]);
 for i=1:N
-    if workim(i) ~= 1 || workim(i)~=-1
+    if workim(i) < 0.8 && workim(i) > -0.8
         lambda(i) = 0;
     end
 end
@@ -41,6 +41,24 @@ M = M + diag(dx2, 2*n) + diag(dx2, -2*n);
 M = M + diag(dx1y1, n+1) + diag(dx1y1, -n-1);
 M = M + diag(dy1x1, n-1) + diag(dy1x1, -n+1);
 
+I = inv(M);
+
+%{
+for i=1:N
+    for j=1:N
+        if i==j+1 || j==i+1 || i==j+(n-1) || j==i+(n-1) || i==j+n+1 || j==i+n+1
+            if mod(i,n)==0 || mod(j,n)==0
+                M(i,j) = 0;
+            end
+        elseif i==j+2 || j==i+2
+            if mod(i,n)==0 || mod(j,n)==0 || mod(i,n)==n-1 || mod(j,n)==n-1
+                M(i,j) = 0;
+            end
+        end
+    end
+end
+%}
+
 d0 = -4*dt/epsilon*ones([N,1]);
 d1 = 1*dt/epsilon*ones([N-1,1]);
 d2 = 1*dt/epsilon*ones([N-n,1]);
@@ -52,12 +70,13 @@ figure;
 subplot(2,1,1);
 imshow((im+1)/2);
 subplot(2,1,2);
-for i=1:10
+for i=1:2400
     Wim = workim.^3 - workim; 
     rhs = Lapl*Wim + workim - C1*epsilon*Lapl*workim + C2*workim + lambda.*(im(:) - workim);
-    workim = M\rhs;
+    workim = I*rhs;
     workim = reshape(workim, [n,m]);
     imshow((workim+1)/2);
+    title(["t = ", i*dt]);
     drawnow;
     workim = workim(:);
 end
