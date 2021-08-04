@@ -30,7 +30,7 @@ workim = reshape(workim, [n,m]);
 K2 = zeros([n,m]);
 for i=1:n
     for j=1:m
-        K2(i,j) = 4*pi^2 *(((i)/n)^2 + ((j)/m)^2);
+        K2(i,j) = 4*pi^2 *(((i-1)/n)^2 + ((j-1)/m)^2);
     end
 end
 K4 = K2.^2;
