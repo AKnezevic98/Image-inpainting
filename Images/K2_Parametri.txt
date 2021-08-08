@@ -1,0 +1,72 @@
+***DOUBLE STRIPE
+
+DWP:
+T = 200;
+swtch_t = T/2;
+epsilon = 1;
+swtch_eps = 0.01;
+l0 = 10000;
+C1 = 500;
+C2 = 3*l0;
+dt = 1;
+
+DOP:
+T = 300;
+swtch_t = T/3;
+epsilon = 1;
+swtch_eps = 0.03;
+l0 = 10000;
+C1 = 500;
+C2 = 3*l0;
+dt = 1;
+
+LOG:
+T = 300;
+swtch_t = T/3;
+epsilon = 1;
+swtch_eps = 0.03;
+l0 = 10000;
+C1 = 500;
+C2 = 3*l0;
+dt = 1;
+
+SF:
+
+
+***CROSS
+
+DWP:
+T = 400;
+swtch_t = T/5;
+epsilon = 1;
+swtch_eps = 0.01;
+l0 = 0.001;
+C1 = 3000;
+C2 = 3*l0;
+dt = 1;
+
+DOP:
+T = 4000;
+swtch_t = T/5;
+epsilon = 1;
+swtch_eps = 0.01;
+l0 = 250;
+C1 = 3000;
+C2 = 0.4*l0;
+dt = 1;
+
+LOG:
+BREAKS DOWN!
+
+SF:
+
+***CIRCLE:
+
+DWP: T = 4000;
+swtch_t = T/5;
+epsilon = 1;
+swtch_eps = 0.02;
+l0 = 1;
+C1 = 10000;
+C2 = l0;
+dt = 1;
