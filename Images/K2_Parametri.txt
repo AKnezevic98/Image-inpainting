@@ -60,6 +60,7 @@ BREAKS DOWN!
 
 SF:
 
+
 ***CIRCLE:
 
 DWP: T = 4000;
@@ -69,4 +70,15 @@ swtch_eps = 0.02;
 l0 = 1;
 C1 = 10000;
 C2 = l0;
+dt = 1;
+
+
+***BIG CROSS:
+T = 4000;
+swtch_t = T/4;
+epsilon = 1;
+swtch_eps = 0.01;
+l0 = 0;
+C1 = 21000;
+C2 = 1*l0;
 dt = 1;
