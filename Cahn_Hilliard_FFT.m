@@ -1,6 +1,6 @@
 %% IMAGE IMPORTING
 filespath = [pwd '\'];
-imagename = 'Star_inpaint_7.png';
+imagename = 'Star_inpaint.png';
 im = imread([filespath imagename]);
 im = rgb2gray(im);
 im = im2double(im);
@@ -11,10 +11,10 @@ N = n*m;
 T = 4000;
 swtch_t = T/5;
 epsilon = 1;
-swtch_eps = 0.02;
-l0 = 1;
-C1 = 10000;
-C2 = l0;
+swtch_eps = 0.03;
+l0 = 500;
+C1 = 100;
+C2 = 1*l0;
 dt = 1;
 
 %% REDEFINING IN CASE OF LOG POTENTIAL
@@ -45,16 +45,40 @@ workim = reshape(workim, [n,m]);
 K2 = zeros([n,m]);
 for i=1:n
     for j=1:m
-        K2(i,j) = 4*pi^2 *(((i-1)/n)^2 + ((j-1)/m)^2); %ACO's WEIRD SOLUTION
-        %K2(i,j) = 2*(2 - cos(2*pi*(i-1)/n) - cos(2*pi*(j-1)/m));
+        K2(i,j) = 2*(2 - cos(2*pi*(i-1)/n) - cos(2*pi*(j-1)/m));
     end
 end
 K4 = K2.^2;
 
 %% MASKS FOR SHOCK FILTER
+
+%AVERAGED DERIVATIVE
 gradx = [0,0,0; -1,0,1; 0,0,0]/2;
 grady = [0,1,0; 0,0,0; 0,-1,0]/2;
+
+%FORWARD DERIVATIVE
+gradpx = [0,0,0; 0,-1,1; 0,0,0];
+gradpy = [0,1,0; 0,-1,0; 0,0,0];
+
+%BACKWARD DERIVATIVE
+gradmx = [0,0,0; -1,1,0; 0,0,0];
+gradmy = [0,0,0; 0,1,0; 0,-1,0];
+
+%LAPLACE
 laplace = [0,1,0; 1,-4,1; 0,1,0];
+
+%% SHOCK FILTER ON INITIAL IMAGE
+%{
+gradxim = imfilter(im, gradx);
+gradyim = imfilter(im, grady);
+agim = sqrt(gradxim.^2 + gradyim.^2);
+
+laplaceim = imfilter(im, laplace);
+slim = sign(laplaceim);
+F = -agim.*slim;
+
+F_tilda = fft2(F);
+%}
 
 %% ALGORITHM
 swtch_t = floor(swtch_t);
@@ -81,21 +105,22 @@ for i=0:dt:T
     workim_tilda = fft2(workim);
     
     %POTENTIALS
-    F = 4*workim.^3 - 6*workim.^2 + 2*workim; %DOUBLE WELL u^2*(u-1)^2
+    %F = 4*workim.^3 - 6*workim.^2 + 2*workim; %DOUBLE WELL u^2*(u-1)^2
     %F = -0.5*ones([n,m]).*heaviside(-workim) + (-workim/2 + ...
     %ones([n,m])/4).*heaviside(workim).*heaviside(ones([n,m])-workim) + ...
     %0.5*ones([n,m]).*heaviside(workim-ones([n,m])); %DOUBLE OBSTACLE 1/4*u*(1-u)
     %F = log((workim)./(ones([n,m])-workim))/4 - 2*workim + ones([n,m]); %LOG 1/4*(u*log(u/(1-u)) + log(1-u) + log(2) - 4*u^2 + 4*u -1)
     
+    
     %SHOCK FILTER POTENTIAL
-    %{
     gradxworkim = imfilter(workim, gradx);
     gradyworkim = imfilter(workim, grady);
     agworkim = sqrt(gradxworkim.^2 + gradyworkim.^2);
+   
     laplaceworkim = imfilter(workim, laplace);
     slworkim = sign(laplaceworkim);
     F = -agworkim.*slworkim;
-    %}
+    
     
     F_tilda = fft2(F);
     
