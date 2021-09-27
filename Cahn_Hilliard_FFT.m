@@ -11,7 +11,8 @@ N = n*m;
 T = 4000;
 swtch_t = T/5;
 epsilon = 1;
-swtch_eps = 0.03;
+delta = 0.0625;
+swtch_eps = 0.01;
 l0 = 500;
 C1 = 100;
 C2 = 1*l0;
@@ -85,20 +86,20 @@ swtch_t = floor(swtch_t);
 
 %FIGURE DEFINING
 figure;
-subplot(3,1,1);
+subplot(1,3,1);
 imshow(im);
-subplot(3,1,3);
+subplot(1,3,3);
 
 for i=0:dt:T
     
     %SWITCHING AFTER CERTAIN t
     if i==swtch_t
         epsilon = swtch_eps;
-        subplot(3,1,2);
+        subplot(1,3,2);
         imshow(workim);
         title(["t = " num2str(i*dt)]);
         drawnow;
-        subplot(3,1,3);
+        subplot(1,3,3);
     end
     
     %TRANSFORM
@@ -118,8 +119,8 @@ for i=0:dt:T
     agworkim = sqrt(gradxworkim.^2 + gradyworkim.^2);
    
     laplaceworkim = imfilter(workim, laplace);
-    slworkim = sign(laplaceworkim);
-    F = -agworkim.*slworkim;
+    funclaplace = laplaceworkim./(abs(laplaceworkim) + delta);
+    F = -agworkim.*funclaplace;
     
     
     F_tilda = fft2(F);
