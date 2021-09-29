@@ -13,8 +13,8 @@ swtch_t = T/5;
 epsilon = 1;
 delta = 0.0625;
 swtch_eps = 0.01;
-l0 = 500;
-C1 = 100;
+l0 = 10000;
+C1 = 0;
 C2 = 1*l0;
 dt = 1;
 
@@ -51,30 +51,10 @@ for i=1:n
 end
 K4 = K2.^2;
 
-%% MASKS FOR SHOCK FILTER
-
-%AVERAGED DERIVATIVE
-gradx = [0,0,0; -1,0,1; 0,0,0]/2;
-grady = [0,1,0; 0,0,0; 0,-1,0]/2;
-
-%FORWARD DERIVATIVE
-gradpx = [0,0,0; 0,-1,1; 0,0,0];
-gradpy = [0,1,0; 0,-1,0; 0,0,0];
-
-%BACKWARD DERIVATIVE
-gradmx = [0,0,0; -1,1,0; 0,0,0];
-gradmy = [0,0,0; 0,1,0; 0,-1,0];
-
-%LAPLACE
-laplace = [0,1,0; 1,-4,1; 0,1,0];
-
 %% SHOCK FILTER ON INITIAL IMAGE
 %{
-gradxim = imfilter(im, gradx);
-gradyim = imfilter(im, grady);
-agim = sqrt(gradxim.^2 + gradyim.^2);
-
-laplaceim = imfilter(im, laplace);
+[agim, dirgim] = imgradient(im, 'central');
+laplaceim = del2(im);
 slim = sign(laplaceim);
 F = -agim.*slim;
 
@@ -114,12 +94,10 @@ for i=0:dt:T
     
     
     %SHOCK FILTER POTENTIAL
-    gradxworkim = imfilter(workim, gradx);
-    gradyworkim = imfilter(workim, grady);
-    agworkim = sqrt(gradxworkim.^2 + gradyworkim.^2);
-   
-    laplaceworkim = imfilter(workim, laplace);
-    funclaplace = laplaceworkim./(abs(laplaceworkim) + delta);
+    [agworkim, gdirworkim] = imgradient(workim, 'central');
+    laplaceworkim = del2(workim);
+    funclaplace = sign(laplaceworkim);
+    %funclaplace = laplaceworkim./(abs(laplaceworkim) + delta);
     F = -agworkim.*funclaplace;
     
     
@@ -131,7 +109,7 @@ for i=0:dt:T
     
     %RIGHT HAND SIDE OF EQUATION
     rhs = workim_tilda - (dt/epsilon)*K2.*F_tilda + dt*(lambda_u_tilda + C1*K2.*workim_tilda + C2*workim_tilda);
-    lhs = 1*ones([n,m]) + dt*(epsilon*K4 + C1*K2 + C2*ones([n,m]));
+    lhs = ones([n,m]) + dt*(epsilon*K4 + C1*K2 + C2*ones([n,m]));
     
     %EVOLUTION
     workim_tilda = rhs./lhs;
