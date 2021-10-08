@@ -14,7 +14,7 @@ et = eps*dt;
 c1t = dt*c1;
 c2t = dt*c2;
 
-
+%%
 im = imread('Star_inpaint_18.png');
 im = rgb2gray(im);
 im = im2double(im);
@@ -23,21 +23,24 @@ im = im2double(im);
 %s = im2double(im);
 f = im;%2*im-1;
 u = f;
-nx = size(f,2);
-ny = size(f,1);
+%{
+Bespotrebno koristenje 2 poziva funkcije, al ionako nije toliko presudno
+kao neke for petlje nize. Takodjer maknut uduplani u=f.
+%}
+[ny, nx] = size(f);
 N = nx*ny;
-u = f;
 
 %imshow(u, 'InitialMagnification', 1000);
 
-lmbda = L*ones(ny,nx);
-for i = 1:nx
-    for j=1:ny
-        if f(j,i)<0.9 && f(j,i)>0.1%-0.9
-            lmbda(j,i) = 0;
-        end
-    end
-end
+%%
+%{
+MATLAB ima multiline komentare, kao sto vidis sve sto je uglavljeno izmedju
+%{ i %} je multiline komentar.
+Dakle ovo ispod bi trebalo napraviti lambda matricu preko maski, naime
+f<0.1 i f>0.9 su maske koje su 1 kad je uvjet ispunjen, a 0 drugdje, sto
+upravo i zelimo.
+%}
+lmbda = L*(f<0.1 + f>0.9);
 
 M=zeros(ny,nx);
 for k=0:(nx-1)
@@ -45,109 +48,106 @@ for k=0:(nx-1)
         M(l+1,k+1) = -2*(cos(2*pi*l/ny)-1)-2*(cos(2*pi*k/nx)-1); %
     end
 end
+M_2 = M.^2;
 
 %% shock filter pocetni
-% % [ux,uy] = gradient(u);
-% % nably = sqrt(ux.^2+uy.^2);
-% % lapl = del2(u);
-% % u = -sign(lapl).*nably;
-% % 
-% % figure;
-% % subplot(2,1,1);
-% % imshow((f+1)/2);
-% % subplot(2,1,2);
-% % for t = 0:dt:T1
-% %     imshow((u+1)/2, 'InitialMagnification', 1000);
-% %     title(["t = " t]);
-% %     pot1 = u.^3-u;
-% %     drawnow;
-% %     ftu = (dt*(1/eps*fft2(u)+fft2(lmbda.*(f-u))-c1*M.*fft2(u)+c2*fft2(u))+fft2(u))./(1+eps*dt*M.^2-c1t*M+c2t);
-% %     u = real(ifft2(ftu));
-% % end
+%{
+% Multiline komentar
+[ux,uy] = gradient(u);
+nably = sqrt(ux.^2+uy.^2);
+lapl = del2(u);
+u = -sign(lapl).*nably;
 
+figure;
+subplot(2,1,1);
+imshow((f+1)/2);
+subplot(2,1,2);
+for t = 0:dt:T1
+    imshow((u+1)/2, 'InitialMagnification', 1000);
+    title(["t = " t]);
+    pot1 = u.^3-u;
+    drawnow;
+    ftu = (dt*(1/eps*fft2(u)+fft2(lmbda.*(f-u))-c1*M.*fft2(u)+c2*fft2(u))+fft2(u))./(1+eps*dt*M.^2-c1t*M+c2t);
+    u = real(ifft2(ftu));
+end
+%}
 %% shock filter potential
 
 for t = 0:dt:T1
     %imshow(u, 'InitialMagnification', 1000);
     %title(["t = " t]);
     %drawnow;
-    [ux,uy] = gradient(u);
-    nably = sqrt(ux.^2+uy.^2);
+    %{
+    Ovdje se moze koristiti druga vrsta gradijenta, koja je brza. Memorija
+    me ne zanima, brzina mi je bitna. Zato sam ovaj dio promjenio. Naime,
+    ovo odmah racuna absolutnu vrijednost gradijenta. Ovo 'central' samo
+    znaci da koristim onu centralnu verziju za gradijent, mozes koristit i
+    onu koja je derivacija prema naprijed ili natrag, kako zelis.
+    Takodjer racunam fft2(u) samo jednom, ne tri puta kao sto si ti radila.
+    Za kraj izbacujem M.^2 van petlje i zamjenjujem ga sa M_2, tako da je i
+    to brze.
+    %}
+    [nably, nablydirection] = imgradient(workim, 'central');
     lapl = del2(u);
     sfilt = -lapl./(abs(lapl)+delta).*nably;
     %sfilt = 4*workim.^3 - 6*workim.^2 + 2*workim; %DOUBLE WELL u^2*(u-1)^2
-    ftu = (dt*(-1/eps*M.*fft2(sfilt)+fft2(lmbda.*(f-u))+c1*M.*fft2(u)+c2*fft2(u))+fft2(u))./(1+eps*dt*M.^2+c1t*M+c2t);
+    fft2_u = fft2(u);
+    ftu = (dt*(-1/eps*M.*fft2(sfilt)+fft2(lmbda.*(f-u))+c1*M.*fft2_u+c2*fft2_u)+fft2_u)./(1+eps*dt*M_2+c1t*M+c2t);
     u = real(ifft2(ftu));
 end
 imshow(u, 'InitialMagnification', 1000);
 title('prvi korak');
 drawnow;
+
+%%
 for t = T1:dt:T2
     %imshow(u, 'InitialMagnification', 1000);
     %title(["t = " t]);
     %drawnow;
-    [ux,uy] = gradient(u);
-    nably = sqrt(ux.^2+uy.^2);
+    [nably, nablydirection] = imgradient(workim, 'central');
     lapl = del2(u);
     sfilt = -lapl./(abs(lapl)+delta).*nably;
     %sfilt = 4*workim.^3 - 6*workim.^2 + 2*workim; %DOUBLE WELL u^2*(u-1)^2
-    ftu = (dt*(1/eps2*M.*fft2(sfilt)+fft2(lmbda.*(f-u))-c1*M.*fft2(u)+c2*fft2(u))+fft2(u))./(1+eps2*dt*M.^2-c1t*M+c2t);
+    fft2_u = fft2(u);
+    ftu = (dt*(-1/eps*M.*fft2(sfilt)+fft2(lmbda.*(f-u))+c1*M.*fft2_u+c2*fft2_u)+fft2_u)./(1+eps*dt*M_2+c1t*M+c2t);
     u = real(ifft2(ftu));
 end
 imshow(u, 'InitialMagnification', 1000);
 title('drugi korak');
 drawnow;
+
+%%
 %L2 = sum((s-u).^2,'all');
 %disp(L2)
-for i = 1:nx
-    for j=1:ny
-        if u(j,i)<0.5
-            u(j,i) = 0;
-        end
-        
-        if u(j,i) >= 0.5
-            u(j,i) = 1;
-        end
-    end
-end
+%{
+Opet, zamjena koristenjem maski umjesto for petlji.
+%}
+u(u<0.5) = 0;
+u(u>=0.5) = 1;
 imshow(u, 'InitialMagnification', 1000);
 title('treći korak');
 drawnow;
 
 f = u;
-lmbda = L*ones(ny,nx);
-for i = 1:nx
-    for j=1:ny
-        if f(j,i)<0.9 && f(j,i)>0.1
-            lmbda(j,i) = 0;
-            %u(j,i) = 0;
-        end
-    end
-end
-
+lmbda = L*(f<0.1 + f>0.9);
 
 for t = T2:dt:T3
     %imshow(u, 'InitialMagnification', 1000);
     %title(["t = " t]);
     %drawnow;
-    [ux,uy] = gradient(u);
-    nably = sqrt(ux.^2+uy.^2);
+    [nably, nablydirection] = imgradient(workim, 'central');
     lapl = del2(u);
     sfilt = -lapl./(abs(lapl)+delta).*nably;
     %sfilt = 4*workim.^3 - 6*workim.^2 + 2*workim; %DOUBLE WELL u^2*(u-1)^2
-    ftu = (dt*(1/eps3*M.*fft2(sfilt)+fft2(lmbda.*(f-u))-c1*M.*fft2(u)+c2*fft2(u))+fft2(u))./(1+eps3*dt*M.^2-c1t*M+c2t);
+    fft2_u = fft2(u);
+    ftu = (dt*(-1/eps*M.*fft2(sfilt)+fft2(lmbda.*(f-u))+c1*M.*fft2_u+c2*fft2_u)+fft2_u)./(1+eps*dt*M_2+c1t*M+c2t);
     u = real(ifft2(ftu));
 end
 %imshow(u, 'InitialMagnification', 1000);
 %title('treći korak');
 %drawnow;
-%f = u;
-%lambda2 = L*ones(ny,nx);
-%for i = 1:nx
-%    for j=1:ny
-%        if f(j,i)<0.9 && f(j,i)>-0.9
-%            lmbda2(j,i) = 0;
-%            %u(j,i) = 0;
-%        end
-%    end
-%end
+%{
+% Ovo ne znam za sta sluzi pa cu ostaviti...
+f = u;
+lambda2 = L*(f<0.1 + f>0.9);
+%}
