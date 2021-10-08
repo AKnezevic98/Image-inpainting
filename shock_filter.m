@@ -53,8 +53,7 @@ M_2 = M.^2;
 %% shock filter pocetni
 %{
 % Multiline komentar
-[ux,uy] = gradient(u);
-nably = sqrt(ux.^2+uy.^2);
+[nably, nablydirection] = imgradient(u, 'central');
 lapl = del2(u);
 u = -sign(lapl).*nably;
 
@@ -67,7 +66,8 @@ for t = 0:dt:T1
     title(["t = " t]);
     pot1 = u.^3-u;
     drawnow;
-    ftu = (dt*(1/eps*fft2(u)+fft2(lmbda.*(f-u))-c1*M.*fft2(u)+c2*fft2(u))+fft2(u))./(1+eps*dt*M.^2-c1t*M+c2t);
+    fft2_u = fft2(u);
+    ftu = (dt*(1/eps*fft2(pot1)+fft2(lmbda.*(f-u))-c1*M.*fft2_u+c2*fft2_u)+fft2_u)./(1+eps*dt*M.^2-c1t*M+c2t);
     u = real(ifft2(ftu));
 end
 %}
@@ -87,7 +87,7 @@ for t = 0:dt:T1
     Za kraj izbacujem M.^2 van petlje i zamjenjujem ga sa M_2, tako da je i
     to brze.
     %}
-    [nably, nablydirection] = imgradient(workim, 'central');
+    [nably, nablydirection] = imgradient(u, 'central');
     lapl = del2(u);
     sfilt = -lapl./(abs(lapl)+delta).*nably;
     %sfilt = 4*workim.^3 - 6*workim.^2 + 2*workim; %DOUBLE WELL u^2*(u-1)^2
@@ -104,7 +104,7 @@ for t = T1:dt:T2
     %imshow(u, 'InitialMagnification', 1000);
     %title(["t = " t]);
     %drawnow;
-    [nably, nablydirection] = imgradient(workim, 'central');
+    [nably, nablydirection] = imgradient(u, 'central');
     lapl = del2(u);
     sfilt = -lapl./(abs(lapl)+delta).*nably;
     %sfilt = 4*workim.^3 - 6*workim.^2 + 2*workim; %DOUBLE WELL u^2*(u-1)^2
@@ -135,7 +135,7 @@ for t = T2:dt:T3
     %imshow(u, 'InitialMagnification', 1000);
     %title(["t = " t]);
     %drawnow;
-    [nably, nablydirection] = imgradient(workim, 'central');
+    [nably, nablydirection] = imgradient(u, 'central');
     lapl = del2(u);
     sfilt = -lapl./(abs(lapl)+delta).*nably;
     %sfilt = 4*workim.^3 - 6*workim.^2 + 2*workim; %DOUBLE WELL u^2*(u-1)^2
